@@ -55,7 +55,8 @@ export const register = async (req, res) => {
         id: newUser.id,
         email: newUser.email,
         name: newUser.user,
-        image: newUser.image
+        image: newUser.image,
+        role: newUser.role
       },
       success: true
     })
@@ -65,7 +66,8 @@ export const register = async (req, res) => {
     res.status(500).json({
       message: 'error while creating user',
       error,
-      success: false
+      success: false,
+      
     })
   }
 }
