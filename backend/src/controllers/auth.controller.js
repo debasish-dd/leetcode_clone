@@ -4,7 +4,6 @@ import { UserRole } from '../generated/prisma/index.js'
 import jwt from 'jsonwebtoken'
 
 export const register = async (req, res) => {
-
   const { email, password, name } = req.body
 
   try {
@@ -16,7 +15,8 @@ export const register = async (req, res) => {
 
     if (existingUser) {
       return res.status(400).json({
-        error: 'user alrady exists'
+        error: 'user alrady exists',
+        success: false
       })
     }
 
@@ -56,37 +56,42 @@ export const register = async (req, res) => {
         email: newUser.email,
         name: newUser.user,
         image: newUser.image
-      }
+      },
+      success: true
     })
-    
   } catch (error) {
     console.log('my error is:---->> ', error)
 
     res.status(500).json({
       message: 'error while creating user',
-      error
+      error,
+      success: false
     })
   }
 }
 
 export const login = async (req, res) => {
-  const {email, password} = req.body
+  const { email, password } = req.body
 
   try {
     const user = await db.user.findUnique({
-      where:{email}
+      where: { email }
     })
 
     if (!user) {
-      return res.status(401).json({message: "user not found"})
+      return res.status(401).json({ message: 'user not found', success: false })
     }
 
     const isMatchedPass = await bcrypt.compare(password, user.password)
     if (!isMatchedPass) {
-      return res.status(401).json({message: "invalid email or password"})
+      return res
+        .status(401)
+        .json({ message: 'invalid email or password', success: false })
     }
-    
-    const token = jwt.sign({id:user.id}, process.env.JWT_SECRET, {expiresIn: "1d"})
+
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
+      expiresIn: '1d'
+    })
 
     res.cookie('jwt', token, {
       httpOnly: true,
@@ -102,9 +107,9 @@ export const login = async (req, res) => {
         email: user.email,
         name: user.user,
         image: user.image
-      }
+      },
+      success: true
     })
-
   } catch (error) {
     console.log('my error is:---->> ', error)
 
@@ -113,12 +118,44 @@ export const login = async (req, res) => {
       error
     })
   }
-
-
 }
 
 export const logout = async (req, res) => {
+  try {
+    res.clearCookie('jwt', {
+      httpOnly: true,
+      sameSite: 'strict',
+      source: process.env.NODE_ENV !== 'devlopment'
+    })
 
+    res
+      .status(204)
+      .json({ message: 'User logged out succesfull', success: true })
+  } catch (error) {
+    console.error('error while logging out user', error)
+
+    res.status(500).json({
+      message: 'error while logging out user',
+      error,
+      success: false
+    })
+  }
 }
 
-export const check = async (req, res) => {}
+export const check = async (req, res) => {
+  try {
+    res.status(204).json({ 
+      message: 'User authenticated succesfull', success: true,
+      user:req.user
+     });
+
+  } catch (error) {
+    console.error('error while checking user', error)
+
+    res.status(500).json({
+      message: 'error while checking user',
+      error,
+      success: false
+    })
+  }
+}
