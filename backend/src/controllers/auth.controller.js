@@ -4,6 +4,7 @@ import { UserRole } from '../generated/prisma/index.js'
 import jwt from 'jsonwebtoken'
 
 export const register = async (req, res) => {
+
   const { email, password, name } = req.body
 
   try {
@@ -68,8 +69,56 @@ export const register = async (req, res) => {
   }
 }
 
-export const login = async (req, res) => {}
+export const login = async (req, res) => {
+  const {email, password} = req.body
 
-export const logout = async (req, res) => {}
+  try {
+    const user = await db.user.findUnique({
+      where:{email}
+    })
+
+    if (!user) {
+      return res.status(401).json({message: "user not found"})
+    }
+
+    const isMatchedPass = await bcrypt.compare(password, user.password)
+    if (!isMatchedPass) {
+      return res.status(401).json({message: "invalid email or password"})
+    }
+    
+    const token = jwt.sign({id:user.id}, process.env.JWT_SECRET, {expiresIn: "1d"})
+
+    res.cookie('jwt', token, {
+      httpOnly: true,
+      sameSite: 'strict',
+      source: process.env.NODE_ENV !== 'devlopment',
+      maxAge: 1000 * 60 * 60 * 24
+    })
+
+    res.status(200).json({
+      message: 'User logged in Succesfully',
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.user,
+        image: user.image
+      }
+    })
+
+  } catch (error) {
+    console.log('my error is:---->> ', error)
+
+    res.status(500).json({
+      message: 'error while logging in user',
+      error
+    })
+  }
+
+
+}
+
+export const logout = async (req, res) => {
+
+}
 
 export const check = async (req, res) => {}
