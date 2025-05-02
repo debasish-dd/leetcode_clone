@@ -3,6 +3,7 @@ import dotenv from 'dotenv'
 import cookieParser from 'cookie-parser'
 
 import authRoutes from './routes/auth.routes.js'
+import problemsRoutes from './routes/problems.routes.js';
 
 const app = express();
 
@@ -19,6 +20,9 @@ app.get('/', (req, res) => {
 })
 
 app.use('/api/v1/auth', authRoutes)
+app.use('/api/v1/problems', problemsRoutes)
+
+
 
 app.listen(port, () => {
   console.log(`the server is running on port: ${port}`)
